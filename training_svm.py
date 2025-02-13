@@ -1,11 +1,11 @@
 import os
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
 
 from skimage.io import imread
 from skimage.transform import resize
 from skimage.feature import hog
-import matplotlib.pyplot as plt
 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
