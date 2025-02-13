@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
+from sklearn.metrics import roc_curve, auc
 
 
 # przetworzenie danych wejściowych na takie, które będą kompatybilne z algorytmami ML
@@ -63,7 +64,7 @@ x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size = 0.
 # tutaj można rozbić program na 2 osobne klasy obiektów
 
 # trening klasyfikatora z optymalizacją parametrów
-classifier = SVC()
+classifier = SVC(probability=True)
 parameters = [{'gamma': [0.01, 0.001, 0.0001], 'C': [1, 10, 100, 1000]}]
 grid_search = GridSearchCV(classifier, parameters)
 grid_search.fit(x_train, y_train)
@@ -74,5 +75,25 @@ y_prediction = best_estimator.predict(x_test)
 score = accuracy_score(y_prediction, y_test)
 
 print(f"Wynik testu skuteczności: {score * 100:.2f}%")
+
+# Zamieniamy model na taki, który zwraca prawdopodobieństwa
+best_estimator.probability = True
+
+# Obliczamy prawdopodobieństwa dla klasy pozytywnej
+y_probabilities = best_estimator.predict_proba(x_test)[:, 1]
+
+# Obliczenie krzywej ROC
+fpr, tpr, _ = roc_curve(y_test, y_probabilities)
+roc_auc = auc(fpr, tpr)
+
+# Wykres krzywej ROC
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, color='blue', lw=2, label=f'Krzywa ROC (AUC = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  # linia referencyjna
+plt.xlabel('False Positive Rate (FPR)')
+plt.ylabel('True Positive Rate (TPR)')
+plt.title('Krzywa ROC klasyfikatora SVM')
+plt.legend(loc='lower right')
+plt.show()
 
 pickle.dump(best_estimator, open('./model_svm.p', 'wb'))
