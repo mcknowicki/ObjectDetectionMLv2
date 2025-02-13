@@ -96,4 +96,4 @@ plt.title('Krzywa ROC klasyfikatora SVM')
 plt.legend(loc='lower right')
 plt.show()
 
-pickle.dump(best_estimator, open('./model_svm.p', 'wb'))
+pickle.dump(best_estimator, open('./data/model_svm.p', 'wb'))
