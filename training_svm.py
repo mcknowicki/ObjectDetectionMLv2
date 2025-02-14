@@ -68,9 +68,9 @@ classifier = SVC(probability=True)
 parameters = [{'gamma': [0.01, 0.001, 0.0001], 'C': [1, 10, 100, 1000]}]
 grid_search = GridSearchCV(classifier, parameters)
 grid_search.fit(x_train, y_train)
+best_estimator = grid_search.best_estimator_
 
 # test wydajności
-best_estimator = grid_search.best_estimator_
 y_prediction = best_estimator.predict(x_test)
 score = accuracy_score(y_prediction, y_test)
 

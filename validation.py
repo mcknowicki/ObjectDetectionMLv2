@@ -22,7 +22,7 @@ categories = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(inp
 print(f"Wykryto następujące kategorie obiektów {categories}")
 
 # wczytanie obrazu do sklasyfikowania oraz konwersja jak w przypadku treningu klasyfikatora
-img_path = './data/val/eiffel_test2.jpg'
+img_path = './data/val/stop_test1.jpg'
 if not os.path.exists(img_path):
     raise FileNotFoundError(f"Nie znaleziono obrazu: {img_path}")
 
@@ -33,7 +33,7 @@ features, hog_image = hog(img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), f
 pred_index = model.predict([features])[0]
 pred_label = categories[pred_index]
 
-print(f"Obiekt widoczny na obrazie należy do kategorii {pred_label}")
+print(f"Predykcja dla modelu SVM: {pred_label}")
 
 # przedstawienie obrazu oraz
 plt.figure(figsize=(8, 4))
