@@ -2,9 +2,8 @@ import numpy as np
 import h5py
 import pickle
 import matplotlib.pyplot as plt
-from PIL.ImageOps import scale
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, roc_curve, auc
 

@@ -14,7 +14,11 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 # parametry preparowanego zbioru
+IMG_SIZE = (128, 128)
 MAX_SAMPLES = 5000
+ROTATE_VALUE = 1
+PIXELS_PER_CELL = (8, 8) # PIXELS_PER_CELL (8, 8) daje mniej cech, co przyspiesza operacje na nich, (16, 16) jest bardziej dokładne
+CELLS_PER_BLOCK = (2, 2)
 
 # katalog z danymi wejściowymi
 input_dir = './data/input'
@@ -34,9 +38,10 @@ for category_index, category in enumerate(categories):
             img = imread(img_path, as_gray=True)
 
             for angle in range(1, 361):
-                rotated_img = rotate(img, angle, resize=False, mode='constant', cval=1)
-                img = resize(img, (256, 256))
-                features = hog(rotated_img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
+                rotated_img = rotate(img, angle, resize=False, mode='constant', cval=ROTATE_VALUE)
+                resized_img = resize(img, IMG_SIZE)
+                features = hog(resized_img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True)
+
                 data.append(features)
                 labels.append(category_index)
 
