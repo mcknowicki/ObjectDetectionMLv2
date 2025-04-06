@@ -39,7 +39,7 @@ for category_index, category in enumerate(categories):
 
             for angle in range(1, 361):
                 rotated_img = rotate(img, angle, resize=False, mode='constant', cval=ROTATE_VALUE)
-                resized_img = resize(img, IMG_SIZE)
+                resized_img = resize(rotated_img, IMG_SIZE)
                 features = hog(resized_img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True)
 
                 data.append(features)
