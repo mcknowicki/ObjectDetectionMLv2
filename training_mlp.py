@@ -3,8 +3,8 @@ import h5py
 import pickle
 import matplotlib.pyplot as plt
 
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, roc_curve, auc
 
 
@@ -18,9 +18,9 @@ with h5py.File(input_file, 'r') as f:
 
 print(f"Wczytano dane z {input_file}")
 
-# trening klasyfikatora Super Vector Machine z optymalizacją parametrów
-classifier = SVC(probability=True)
-parameters = [{'gamma': ['scale'], 'C': [1, 10]}] # 'scale' dostosowywuje parametr 'gamma' do przetwarzanych danych
+# trening klasyfikatora MLP z optymalizacją parametrów
+classifier = MLPClassifier(max_iter=1000, random_state=42)
+parameters = [{'hidden_layer_sizes': [(50,), (100,)], 'alpha': [0.0001, 0.001]}]
 grid_search = GridSearchCV(classifier, parameters)
 grid_search.fit(x_train, y_train)
 best_estimator = grid_search.best_estimator_
@@ -38,15 +38,15 @@ roc_auc = auc(fpr, tpr)
 
 # rysowanie krzywej ROC
 plt.figure(figsize=(8, 6))
-plt.plot(fpr, tpr, color='blue', lw=2, label=f'Krzywa ROC (AUC = {roc_auc:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  # linia referencyjna
+plt.plot(fpr, tpr, color='orange', lw=2, label=f'Krzywa ROC (AUC = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
 plt.xlabel('False Positive Rate (FPR)')
 plt.ylabel('True Positive Rate (TPR)')
-plt.title('Krzywa ROC klasyfikatora SVM')
+plt.title('Krzywa ROC klasyfikatora MLP')
 plt.legend(loc='lower right')
 plt.show()
 
 # zapis wytrenowanego modelu
-model_file = './data/model_svm.p'
+model_file = './data/model_mlp.p'
 pickle.dump(best_estimator, open(model_file, 'wb'))
 print(f"Model zapisano jako {model_file}")
