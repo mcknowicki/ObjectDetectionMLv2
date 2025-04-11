@@ -15,53 +15,54 @@ np.random.seed(SEED)
 
 # parametry preparowanego zbioru
 IMG_SIZE = (128, 128)
-MAX_SAMPLES = 2500
-ROTATE_VALUE = 2
+MAX_SAMPLES = 5000
+ROTATE_VALUE = 1
 PIXELS_PER_CELL = (8, 8) # PIXELS_PER_CELL (8, 8) daje mniej cech, co przyspiesza operacje na nich, (16, 16) jest bardziej dokładne
 CELLS_PER_BLOCK = (2, 2)
 
 # katalog z danymi wejściowymi
 input_dir = './data/input'
 categories = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
-print(f"Wykryto następujące foldery obiektów: {categories}")
+print(f"Wykryto następujące foldery dla poszczególnych obiektów: {categories}")
 
-train_data, train_labels = [], []
-test_data, test_labels = [], []
+data = []
+labels = []
 
-
+# przetwarzanie obrazów
 for category_index, category in enumerate(categories):
     cat_path = os.path.join(input_dir, category)
-    files = os.listdir(cat_path)
-    train_files, test_files = train_test_split(files, test_size=0.2, random_state=SEED)
-    # proporcje 4 do 1, brak shuffle, random_state pobiera ziarno
-    # nie wiem czy nie dodać parametru stratify = labels
 
-    def process_images(file_list, target_data, target_labels):
-        for file in file_list:
-            img_path = os.path.join(cat_path, file)
-            try:
-                img = imread(img_path, as_gray=True)
-                for angle in range(1, 361):
-                    rotated_img = rotate(img, angle, resize=False, mode='constant', cval=ROTATE_VALUE)
-                    resized_img = resize(rotated_img, IMG_SIZE)
-                    features = hog(resized_img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True)
-                    target_data.append(features)
-                    target_labels.append(category_index)
-            except Exception as e:
-                print(f"Błąd przetwarzania {img_path}: {e}")
+    for file in os.listdir(cat_path):
+        img_path = os.path.join(cat_path, file)
+        try:
+            img = imread(img_path, as_gray=True)
 
-    process_images(train_files, train_data, train_labels)
-    process_images(test_files, test_data, test_labels)
+            for angle in range(1, 361):
+                rotated_img = rotate(img, angle, resize=False, mode='constant', cval=ROTATE_VALUE)
+                resized_img = resize(rotated_img, IMG_SIZE)
+                features = hog(resized_img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True)
 
+                data.append(features)
+                labels.append(category_index)
+
+        except Exception as e:
+            print(f"Błąd przetwarzania {img_path}: {e}")
+
+# mieszanie próbek
+data = np.array(data)
+labels = np.array(labels)
+
+indices = np.arange(len(data))
+np.random.shuffle(indices)
+data, labels = data[indices], labels[indices]
 
 # ograniczenie ilości próbek według parametru MAX_SAMPLES
-#data = data[:MAX_SAMPLES]
-#labels = labels[:MAX_SAMPLES]
+data = data[:MAX_SAMPLES]
+labels = labels[:MAX_SAMPLES]
 
-x_train = np.array(train_data)
-y_train = np.array(train_labels)
-x_test = np.array(test_data)
-y_test = np.array(test_labels)
+# podział na zbiór treningowy i testowy
+x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, shuffle=False) # proporcje 4 do 1, brak shuffle, aby zachować rozmieszczenie etykiet z ziarna seed
+# nie wiem czy nie dodać parametru stratify = labels
 
 # zapis danych do pliku HDF5
 output_file = './data/dataset.h5'
