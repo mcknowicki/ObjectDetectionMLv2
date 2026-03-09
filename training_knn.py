@@ -26,8 +26,8 @@ grid_search.fit(x_train, y_train)
 best_estimator = grid_search.best_estimator_
 
 # ocena modelu
-y_prediction = best_estimator.predict(x_test)
-score = accuracy_score(y_prediction, y_test)
+
+score = accuracy_score(best_estimator.predict(x_test), y_test)
 
 print(f"Wynik testu skuteczności: {score * 100:.2f}%")
 

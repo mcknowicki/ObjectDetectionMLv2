@@ -1,15 +1,18 @@
 import pickle
 import os
 
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK
 from skimage.io import imread
 from skimage.transform import resize
 from skimage.feature import hog
 import matplotlib.pyplot as plt
 
+#config
+model_path = './data/model_random_forest.p'
+img_path = './data/val/stop_test2.jpg'
 
 # wczytanie modelu z pliku
 # finalnie program powinien wczytywać kolejno modele w pętli i podać predykcję dla każdego z nich
-model_path = './data/model_svm.p'
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Nie znaleziono modelu: {model_path}")
 
@@ -22,18 +25,26 @@ categories = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(inp
 print(f"Wykryto następujące kategorie obiektów {categories}")
 
 # wczytanie obrazu do sklasyfikowania oraz konwersja jak w przypadku treningu klasyfikatora
-img_path = './data/val/stop_test1.jpg'
 if not os.path.exists(img_path):
     raise FileNotFoundError(f"Nie znaleziono obrazu: {img_path}")
 
 img = imread(img_path, as_gray=True)
-img = resize(img, (256, 256))
-features, hog_image = hog(img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True, visualize=True)
+img = resize(img, IMG_SIZE)
+features, hog_image = hog(img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True, visualize=True)
 
-pred_index = model.predict([features])[0]
-pred_label = categories[pred_index]
 
-print(f"Predykcja dla modelu SVM: {pred_label}")
+probabilities = model.predict_proba([features])[0]
+
+best_index = probabilities.argmax()
+best_prob = probabilities[best_index]
+
+THRESHOLD = 0.5  # do przetestowania i dobrania
+
+if best_prob < THRESHOLD:
+    print(f"Obiekt nierozpoznany (pewność {best_prob:.2f})")
+else:
+    pred_label = categories[best_index]
+    print(f"Predykcja: {pred_label} (pewność {best_prob:.2f})")
 
 # przedstawienie obrazu oraz
 plt.figure(figsize=(8, 4))

@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 import random
 
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK
 from skimage.io import imread
 from skimage.transform import resize, rotate
 from skimage.feature import hog
@@ -14,11 +15,8 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 # parametry preparowanego zbioru
-IMG_SIZE = (128, 128)
 MAX_SAMPLES = 5000
-ROTATE_VALUE = 1
-PIXELS_PER_CELL = (8, 8) # PIXELS_PER_CELL (8, 8) daje mniej cech, co przyspiesza operacje na nich, (16, 16) jest bardziej dokładne
-CELLS_PER_BLOCK = (2, 2)
+ROTATE_VALUE = 5
 
 # katalog z danymi wejściowymi
 input_dir = './data/input'
