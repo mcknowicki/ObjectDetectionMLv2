@@ -1,7 +1,7 @@
 import pickle
 import os
 
-from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, INPUT_DIR
 from skimage.io import imread
 from skimage.transform import resize
 from skimage.feature import hog
@@ -20,8 +20,7 @@ with open(model_path, 'rb') as f:
     model = pickle.load(f)
 
 # wczytanie kategorii obiektów
-input_dir = './data/input'
-categories = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
+categories = [d for d in os.listdir(INPUT_DIR) if os.path.isdir(os.path.join(INPUT_DIR, d))]
 print(f"Wykryto następujące kategorie obiektów {categories}")
 
 # wczytanie obrazu do sklasyfikowania oraz konwersja jak w przypadku treningu klasyfikatora

@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import random
 
-from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, DATASET, INPUT_DIR
 from skimage.io import imread
 from skimage.transform import resize, rotate
 from skimage.feature import hog
@@ -16,58 +16,103 @@ np.random.seed(SEED)
 
 # parametry preparowanego zbioru
 MAX_SAMPLES = 5000
-ROTATE_VALUE = 5
+BG_VALUE = 1 # kolor tła
+NUM_ROTATIONS = 5 # liczba losowych rotacji
 
-# katalog z danymi wejściowymi
-input_dir = './data/input'
-categories = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
-print(f"Wykryto następujące foldery dla poszczególnych obiektów: {categories}")
+# wczytywanie kategorii
+categories = [
+    d for d in os.listdir(INPUT_DIR)
+    if os.path.isdir(os.path.join(INPUT_DIR, d))
+]
+print(f"Wykryto następujące kategorie obiektów: {categories}")
 
-data = []
-labels = []
+train_data, train_labels = [], []
+test_data, test_labels = [], []
 
-# przetwarzanie obrazów
+# przetwarzanie danych
 for category_index, category in enumerate(categories):
-    cat_path = os.path.join(input_dir, category)
+    cat_path = os.path.join(INPUT_DIR, category)
+    files = os.listdir(cat_path)
 
-    for file in os.listdir(cat_path):
+    # podział danych na zbiór treningowy i testowy
+    train_files, test_files = train_test_split(
+        files,
+        test_size=0.2,
+        random_state=SEED
+    ) # nie wiem czy nie dodać parametru stratify = labels
+
+    print(f"{category}: train={len(train_files)}, test={len(test_files)}")
+
+    # zbiór treningowy z augmentacją
+    for file in train_files:
         img_path = os.path.join(cat_path, file)
         try:
             img = imread(img_path, as_gray=True)
 
-            for angle in range(1, 361):
-                rotated_img = rotate(img, angle, resize=False, mode='constant', cval=ROTATE_VALUE)
-                resized_img = resize(rotated_img, IMG_SIZE)
-                features = hog(resized_img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True)
+            # obrót o losowe kąty
+            angles = np.random.randint(0, 360, NUM_ROTATIONS)
 
-                data.append(features)
-                labels.append(category_index)
+            for angle in angles:
+                rotated_img = rotate(
+                    img,
+                    angle,
+                    resize=False,
+                    mode='constant',
+                    cval=BG_VALUE
+                )
+                resized_img = resize(rotated_img, IMG_SIZE)
+                features = hog(
+                    resized_img,
+                    pixels_per_cell=PIXELS_PER_CELL,
+                    cells_per_block=CELLS_PER_BLOCK,
+                    feature_vector=True
+                )
+                train_data.append(features)
+                train_labels.append(category_index)
 
         except Exception as e:
-            print(f"Błąd przetwarzania {img_path}: {e}")
+            print(f"Błąd przetwarzania w zbiorze treningowym {img_path}: {e}")
 
-# mieszanie próbek
-data = np.array(data)
-labels = np.array(labels)
+    # zbiór testowy bez augmentacji
+    for file in test_files:
+        img_path = os.path.join(cat_path, file)
+        try:
+            img = imread(img_path, as_gray=True)
+            resized_img = resize(img, IMG_SIZE)
+            features = hog(
+                resized_img,
+                pixels_per_cell=PIXELS_PER_CELL,
+                cells_per_block=CELLS_PER_BLOCK,
+                feature_vector=True
+            )
+            test_data.append(features)
+            test_labels.append(category_index)
 
-indices = np.arange(len(data))
-np.random.shuffle(indices)
-data, labels = data[indices], labels[indices]
+        except Exception as e:
+            print(f"Błąd przetwarzania w zbiorze testowym: {img_path}: {e}")
+
+# konwersja
+train_data = np.array(train_data)
+train_labels = np.array(train_labels)
+test_data = np.array(test_data)
+test_labels = np.array(test_labels)
+
+#mieszanie w zbiorze train
+train_indices = np.arange(len(train_data))
+np.random.shuffle(train_indices)
+train_data = train_data[train_indices]
+train_labels = train_labels[train_indices]
 
 # ograniczenie ilości próbek według parametru MAX_SAMPLES
-data = data[:MAX_SAMPLES]
-labels = labels[:MAX_SAMPLES]
-
-# podział na zbiór treningowy i testowy
-x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, shuffle=False) # proporcje 4 do 1, brak shuffle, aby zachować rozmieszczenie etykiet z ziarna seed
-# nie wiem czy nie dodać parametru stratify = labels
+"""train_data = train_data[:MAX_SAMPLES]
+train_labels = train_labels[:MAX_SAMPLES]"""
 
 # zapis danych do pliku HDF5
-output_file = './data/dataset.h5'
+output_file = f'./data/dataset{DATASET}.h5'
 with h5py.File(output_file, 'w') as f:
-    f.create_dataset('x_train', data=x_train)
-    f.create_dataset('y_train', data=y_train)
-    f.create_dataset('x_test', data=x_test)
-    f.create_dataset('y_test', data=y_test)
+    f.create_dataset('train_data', data=train_data)
+    f.create_dataset('train_labels', data=train_labels)
+    f.create_dataset('test_data', data=test_data)
+    f.create_dataset('test_labels', data=test_labels)
 
 print(f"Dane zapisane do {output_file}")

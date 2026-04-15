@@ -3,18 +3,19 @@ import h5py
 import pickle
 import matplotlib.pyplot as plt
 
+from config import DATASET
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, roc_curve, auc
 
 
 # wczytanie danych z pliku HDF5
-input_file = './data/dataset.h5'
+input_file = f'./data/dataset{DATASET}.h5'
 with h5py.File(input_file, 'r') as f:
-    x_train = np.array(f['x_train'])
-    y_train = np.array(f['y_train'])
-    x_test = np.array(f['x_test'])
-    y_test = np.array(f['y_test'])
+    x_train = np.array(f['train_data'])
+    y_train = np.array(f['train_labels'])
+    x_test = np.array(f['test_data'])
+    y_test = np.array(f['test_labels'])
 
 print(f"Wczytano dane z {input_file}")
 
