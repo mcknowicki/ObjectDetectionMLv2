@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, roc_curve, auc
 
 
 # wczytanie danych z pliku HDF5
-input_file = f'./data/dataset{DATASET}.h5'
+input_file = f'./data/dataset_{DATASET}.h5'
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
     y_train = np.array(f['train_labels'])
