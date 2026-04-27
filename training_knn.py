@@ -1,8 +1,6 @@
 import numpy as np
 import h5py
 import pickle
-import matplotlib.pyplot as plt
-
 from config import DATASET
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import GridSearchCV
@@ -38,7 +36,7 @@ parameters = {
 }
 
 # model wraz z walidacją krzyżowa *5
-grid_search = GridSearchCV(pipeline, parameters, cv=5)
+grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 grid_search.fit(x_train, y_train)
 best_model = grid_search.best_estimator_
 print(f"Najlepsze parametry: {grid_search.best_params_}")
@@ -50,7 +48,7 @@ test_accuracy = accuracy_score(y_test, y_pred)
 
 # ROC / AUC
 y_prob = best_model.predict_proba(x_test)[:, 1]
-fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+fpr, tpr, _ = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
 
 print(f"CV score: {best_score:.4f}")
@@ -63,13 +61,13 @@ plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
 plt.plot([0, 1], [0, 1], linestyle='--')
 plt.xlabel("FPR")
 plt.ylabel("TPR")
-plt.title("ROC - KNN")
+plt.title("ROC dla klasyfikatora KNN")
 plt.legend()
 plt.show()
 """
 
 # zapis modelu razem z metadanymi
-model_file = f'./data/models/{DATASET}/model_random_forest.p'
+model_file = f'./data/models/{DATASET}/model_knn.p'
 output = {
     "model": best_model,
     "categories": categories,
@@ -87,24 +85,3 @@ output = {
 
 pickle.dump(output, open(model_file, 'wb'))
 print(f"Model zapisano jako {model_file}")
-
-"""
-# obliczanie prawdopodobieństw dla krzywej ROC
-y_probabilities = best_estimator.predict_proba(x_test)[:, 1]
-fpr, tpr, _ = roc_curve(y_test, y_probabilities)
-roc_auc = auc(fpr, tpr)
-
-# rysowanie krzywej ROC
-plt.figure(figsize=(8, 6))
-plt.plot(fpr, tpr, color='purple', lw=2, label=f'Krzywa ROC (AUC = {roc_auc:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
-plt.xlabel('False Positive Rate (FPR)')
-plt.ylabel('True Positive Rate (TPR)')
-plt.title('Krzywa ROC klasyfikatora KNN')
-plt.legend(loc='lower right')
-plt.show()
-
-# zapis wytrenowanego modelu
-model_file = './data/model_knn.p'
-pickle.dump(best_estimator, open(model_file, 'wb'))
-print(f"Model zapisano jako {model_file}")"""
