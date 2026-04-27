@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import random
 
-from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, DATASET, INPUT_DIR
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, DATASET, INPUT_DIR, NUM_ROTATIONS
 from skimage.io import imread
 from skimage.transform import resize, rotate
 from skimage.feature import hog
@@ -17,14 +17,13 @@ np.random.seed(SEED)
 # parametry preparowanego zbioru
 #MAX_SAMPLES = 5000
 BG_VALUE = 1 # kolor tła
-NUM_ROTATIONS = 5 # liczba losowych rotacji
 
 # wczytywanie kategorii
 categories = sorted([
     d for d in os.listdir(INPUT_DIR)
     if os.path.isdir(os.path.join(INPUT_DIR, d))
 ])
-print(f"Wykryto następujące kategorie obiektów: {categories}")
+print(f"Wykryto następujące kategorie obiektów dla zbioru danych {DATASET}: {categories}")
 
 all_files = []
 all_labels = []
@@ -53,7 +52,7 @@ train_files, test_files, train_labels, test_labels = train_test_split(
     random_state=SEED
 )
 
-print(f"Train: {len(train_files)}, Test: {len(test_files)}")
+print(f"Liczba próbek treningowych: {len(train_files)}, testowych: {len(test_files)}")
 
 # listy wyjściowe
 train_data = []
@@ -134,11 +133,16 @@ train_labels = train_labels[:MAX_SAMPLES]"""
 # zapis danych do pliku HDF5
 output_file = f'./data/dataset_{DATASET}.h5'
 with h5py.File(output_file, 'w') as f:
+    f.attrs['img_size'] = IMG_SIZE
+    f.attrs['pixels_per_cell'] = PIXELS_PER_CELL
+    f.attrs['cells_per_block'] = CELLS_PER_BLOCK
+    f.attrs['categories'] = categories
+
     f.create_dataset('train_data', data=train_data)
     f.create_dataset('train_labels', data=train_labels_processed)
     f.create_dataset('test_data', data=test_data)
     f.create_dataset('test_labels', data=test_labels_processed)
 
-print(f"Dane zapisane do {output_file}")
 print(f"Train shape: {train_data.shape}")
 print(f"Test shape: {test_data.shape}")
+print(f"Dane zapisane do {output_file}")
