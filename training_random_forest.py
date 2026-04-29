@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 import pickle
+
 from config import DATASET
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
@@ -53,17 +54,6 @@ roc_auc = auc(fpr, tpr)
 print(f"CV score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
-
-""" TO WRZUCIMY DO ANALIZ
-plt.figure()
-plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
-plt.plot([0, 1], [0, 1], linestyle='--')
-plt.xlabel("FPR")
-plt.ylabel("TPR")
-plt.title("ROC dla klasyfikatora Random Forest")
-plt.legend()
-plt.show()
-"""
 
 # zapis modelu razem z metadanymi
 model_file = f'./data/models/{DATASET}/model_random_forest.p'
