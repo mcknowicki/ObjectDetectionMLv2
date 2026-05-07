@@ -32,11 +32,11 @@ pipeline = Pipeline([
     ('knn', KNeighborsClassifier())
 ])
 
+# trening modelu z walidacją krzyżową *5
 parameters = {
     'knn__n_neighbors': [3, 5, 7]
 }
 
-# model wraz z walidacją krzyżowa *5
 grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 grid_search.fit(x_train, y_train)
 best_model = grid_search.best_estimator_
@@ -56,7 +56,7 @@ print(f"CV score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 
-# zapis modelu razem z metadanymi
+# zapis modelu z metadanymi
 model_file = f'./data/models/{DATASET}/model_knn.p'
 output = {
     "model": best_model,

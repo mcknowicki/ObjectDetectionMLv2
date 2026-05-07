@@ -3,7 +3,14 @@ import numpy as np
 import h5py
 import random
 
-from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, DATASET, INPUT_DIR, NUM_ROTATIONS
+from config import (
+    IMG_SIZE,
+    PIXELS_PER_CELL,
+    CELLS_PER_BLOCK,
+    DATASET,
+    INPUT_DIR,
+    NUM_ROTATIONS
+)
 from skimage.io import imread
 from skimage.transform import resize, rotate
 from skimage.feature import hog
@@ -60,6 +67,7 @@ train_labels_processed = []
 
 test_data = []
 test_labels_processed = []
+test_paths = []
 
 # funkcja ekstrakcji cech
 def extract_features(img):
@@ -108,6 +116,7 @@ for img_path, label in zip(test_files, test_labels):
 
         test_data.append(features)
         test_labels_processed.append(label)
+        test_paths.append(img_path)
 
     except Exception as e:
         print(f"Błąd (test): {img_path} -> {e}")
@@ -142,6 +151,8 @@ with h5py.File(output_file, 'w') as f:
     f.create_dataset('train_labels', data=train_labels_processed)
     f.create_dataset('test_data', data=test_data)
     f.create_dataset('test_labels', data=test_labels_processed)
+
+    f.create_dataset('test_paths', data=np.array(test_paths, dtype='S'))
 
 print(f"Train shape: {train_data.shape}")
 print(f"Test shape: {test_data.shape}")

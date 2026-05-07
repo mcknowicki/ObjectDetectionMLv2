@@ -34,12 +34,12 @@ pipeline = Pipeline([
     ('svm', SVC(probability=True))
 ])
 
+# trening modelu z walidacją krzyżową *5
 parameters = {
     'svm__C': [1, 10],
     'svm__gamma': ['scale']
 }
 
-# model wraz z walidacją krzyżowa *5
 grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 grid_search.fit(x_train, y_train)
 
@@ -61,7 +61,7 @@ print(f"CV score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 
-# zapis modelu razem z metadanymi
+# zapis modelu z metadanymi
 model_file = f'./data/models/{DATASET}/model_svm.p'
 
 output = {

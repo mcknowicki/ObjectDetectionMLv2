@@ -25,7 +25,7 @@ print(f"Wczytano dane z {input_file}")
 print(f"Train shape: {x_train.shape}, Test shape: {x_test.shape}")
 print(f"Kategorie: {categories}")
 
-# model wraz z walidacją krzyżowa *5
+# trening modelu z walidacją krzyżową *5
 classifier = RandomForestClassifier(random_state=42)
 
 parameters = {
@@ -55,7 +55,7 @@ print(f"CV score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 
-# zapis modelu razem z metadanymi
+# zapis modelu z metadanymi
 model_file = f'./data/models/{DATASET}/model_random_forest.p'
 output = {
     "model": best_model,
