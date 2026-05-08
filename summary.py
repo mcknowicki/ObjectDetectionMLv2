@@ -20,6 +20,7 @@ from sklearn.metrics import (
 model_paths = {
     "KNN": f'./data/models/{DATASET}/model_knn.p',
     "Random Forest": f'./data/models/{DATASET}/model_random_forest.p',
+"Logistic Regression": f'./data/models/{DATASET}/model_logistic_regression.p',
     "SVM": f'./data/models/{DATASET}/model_svm.p',
     "MLP": f'./data/models/{DATASET}/model_mlp.p'
 }
@@ -126,7 +127,11 @@ for model_name, model_path in model_paths.items():
         "Recall (best)": recall_best,
 
         "CV Score": metrics["cv_score"],
-        "Overfitting Gap": overfit_gap
+        "Overfitting Gap": overfit_gap,
+
+        "Training Time [s]": metrics["training_time"],
+        "Inference Time [s]": metrics["inference_time"],
+        "Prediction/sample [s]": metrics["prediction_per_sample"]
     })
 
     # wizualizacja błędów

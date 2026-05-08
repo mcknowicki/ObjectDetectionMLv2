@@ -4,7 +4,7 @@ import pickle
 import time
 
 from config import DATASET
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, roc_curve, auc
 from sklearn.pipeline import Pipeline
@@ -27,18 +27,27 @@ print(f"Wczytano dane z {input_file}")
 print(f"Train shape: {x_train.shape}, Test shape: {x_test.shape}")
 print(f"Kategorie: {categories}")
 
-# pipeline - skalowanie  + knn
+# pipeline - skalowanie  + logistic regression
 pipeline = Pipeline([
     ('scaler', StandardScaler()),
-    ('knn', KNeighborsClassifier())
+    ('logreg', LogisticRegression(
+        max_iter=2000,
+        random_state=42
+    ))
 ])
 
 # trening modelu z walidacją krzyżową *5
 parameters = {
-    'knn__n_neighbors': [3, 5, 7]
+    'logreg__C': [0.1, 1, 10],
+    'logreg__solver': ['lbfgs']
 }
 
-grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
+grid_search = GridSearchCV(
+    pipeline,
+    parameters,
+    cv=5,
+    n_jobs=-1
+)
 
 # pomiar czasu treningu
 start_train = time.perf_counter()
@@ -72,7 +81,8 @@ print(f"Inference time: {inference_time:.6f} s")
 print(f"Prediction per sample: {prediction_per_sample:.8f} s")
 
 # zapis modelu z metadanymi
-model_file = f'./data/models/{DATASET}/model_knn.p'
+model_file = f'./data/models/{DATASET}/model_logistic_regression.p'
+
 output = {
     "model": best_model,
     "categories": categories,

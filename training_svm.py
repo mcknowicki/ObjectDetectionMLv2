@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 import pickle
+import time
 
 from config import DATASET
 from sklearn.svm import SVC
@@ -41,15 +42,24 @@ parameters = {
 }
 
 grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
-grid_search.fit(x_train, y_train)
 
+# pomiar czasu treningu
+start_train = time.perf_counter()
+grid_search.fit(x_train, y_train)
+end_train = time.perf_counter()
+training_time = end_train - start_train
+
+# wybór najlepszego modelu
 best_model = grid_search.best_estimator_
 print(f"Najlepsze parametry: {grid_search.best_params_}")
 
-# ewaluacja
+# ewaluacja + pomiar czasu predykcji
 best_score = grid_search.best_score_
-
+start_inference = time.perf_counter()
 y_pred = best_model.predict(x_test)
+end_inference = time.perf_counter()
+inference_time = end_inference - start_inference
+prediction_per_sample = inference_time / len(x_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 
 # ROC / AUC
@@ -60,6 +70,9 @@ roc_auc = auc(fpr, tpr)
 print(f"CV score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
+print(f"Training time: {training_time:.4f} s")
+print(f"Inference time: {inference_time:.6f} s")
+print(f"Prediction per sample: {prediction_per_sample:.8f} s")
 
 # zapis modelu z metadanymi
 model_file = f'./data/models/{DATASET}/model_svm.p'
@@ -70,7 +83,10 @@ output = {
     "metrics": {
         "cv_score": best_score,
         "test_accuracy": test_accuracy,
-        "auc": roc_auc
+        "auc": roc_auc,
+        "training_time": training_time,
+        "inference_time": inference_time,
+        "prediction_per_sample": prediction_per_sample
     },
     "data_config": {
         "img_size": img_size,
