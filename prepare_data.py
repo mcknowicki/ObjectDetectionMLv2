@@ -10,11 +10,9 @@ from config import (
     DATASET,
     INPUT_DIR,
     NUM_ROTATIONS,
-    CORRUPTED_DATASET,
     NOISE_STD,
     BLUR_SIGMA,
     ENABLE_OCCLUSION,
-    CORRUPTION_PROBABILITY,
     NOISE_PROBABILITY,
     BLUR_PROBABILITY,
     OCCLUSION_PROBABILITY
@@ -75,9 +73,15 @@ print(f"Liczba próbek treningowych: {len(train_files)}, testowych: {len(test_fi
 train_data = []
 train_labels_processed = []
 
-test_data = []
-test_labels_processed = []
+test_data_clean = []
+test_labels_clean = []
+
+test_data_corrupted = []
+test_labels_corrupted = []
+
 test_paths = []
+test_images_clean = []
+test_images_corrupted = []
 
 # funkcja generująca zakłócenia
 def corrupt_image(img):
@@ -106,7 +110,7 @@ def corrupt_image(img):
 
         h, w = corrupted.shape
 
-        occ_size = np.random.randint(10, 30)
+        occ_size = np.random.randint(20, 40)
 
         x = np.random.randint(0, w - occ_size)
         y = np.random.randint(0, h - occ_size)
@@ -126,9 +130,6 @@ def extract_features(img):
     )
     return features
 
-# ilość zakłóconych i niezakłóconych obrazów
-num_corrupted = 0
-num_clean = 0
 
 # zbiór treningowy z augmentacją
 print("Przetwarzanie zbioru treningowego...")
@@ -147,14 +148,6 @@ for img_path, label in zip(train_files, train_labels):
                 mode='constant',
                 cval=BG_VALUE
             )
-            if (
-                CORRUPTED_DATASET and
-                np.random.rand() < CORRUPTION_PROBABILITY
-            ):
-                rotated_img = corrupt_image(rotated_img)
-                num_corrupted += 1
-            else:
-                num_clean += 1
 
             features = extract_features(rotated_img)
 
@@ -164,19 +157,33 @@ for img_path, label in zip(train_files, train_labels):
     except Exception as e:
         print(f"Błąd (train): {img_path} -> {e}")
 
-print(f"Czyste próbki: {num_clean}")
-print(f"Zakłócone próbki: {num_corrupted}")
 
-# zbiór testowy bez augmentacji
+# zbiór testowy
 print("Przetwarzanie zbioru testowego...")
 
 for img_path, label in zip(test_files, test_labels):
+
     try:
         img = imread(img_path, as_gray=True)
-        features = extract_features(img)
 
-        test_data.append(features)
-        test_labels_processed.append(label)
+        # zbiór bez zakłóceń
+        clean_features = extract_features(img)
+
+        test_data_clean.append(clean_features)
+        test_labels_clean.append(label)
+
+        # zbiór z zakłóceniami
+        corrupted_img = corrupt_image(img)
+        corrupted_features = extract_features(corrupted_img)
+
+        test_data_corrupted.append(corrupted_features)
+        test_labels_corrupted.append(label)
+
+        # zapis obrazów do wizualizacji błędnych predykcji
+        test_images_clean.append(resize(img, IMG_SIZE))
+        test_images_corrupted.append(resize(corrupted_img, IMG_SIZE))
+
+        # ścieżki do obrazów
         test_paths.append(img_path)
 
     except Exception as e:
@@ -186,8 +193,14 @@ for img_path, label in zip(test_files, test_labels):
 train_data = np.array(train_data)
 train_labels_processed = np.array(train_labels_processed)
 
-test_data = np.array(test_data)
-test_labels_processed = np.array(test_labels_processed)
+test_data_clean = np.array(test_data_clean)
+test_labels_clean = np.array(test_labels_clean)
+
+test_data_corrupted = np.array(test_data_corrupted)
+test_labels_corrupted = np.array(test_labels_corrupted)
+
+test_images_clean = np.array(test_images_clean)
+test_images_corrupted = np.array(test_images_corrupted)
 
 #mieszanie w zbiorze train
 indices = np.arange(len(train_data))
@@ -201,29 +214,31 @@ train_labels_processed = train_labels_processed[indices]
 train_labels = train_labels[:MAX_SAMPLES]"""
 
 # zapis danych do pliku HDF5
-IS_CORRUPTED = "_corrupted" if CORRUPTED_DATASET else ""
-output_file = f'./data/dataset_{DATASET}{IS_CORRUPTED}.h5'
+output_file = f'./data/dataset_{DATASET}.h5'
 
 with h5py.File(output_file, 'w') as f:
     f.attrs['img_size'] = IMG_SIZE
     f.attrs['pixels_per_cell'] = PIXELS_PER_CELL
     f.attrs['cells_per_block'] = CELLS_PER_BLOCK
-    f.attrs['corrupted_dataset'] = CORRUPTED_DATASET
     f.attrs['noise_std'] = NOISE_STD
     f.attrs['blur_sigma'] = BLUR_SIGMA
     f.attrs['categories'] = categories
-    f.attrs['corruption_probability'] = CORRUPTION_PROBABILITY
     f.attrs['noise_probability'] = NOISE_PROBABILITY
     f.attrs['blur_probability'] = BLUR_PROBABILITY
     f.attrs['occlusion_probability'] = OCCLUSION_PROBABILITY
 
     f.create_dataset('train_data', data=train_data)
     f.create_dataset('train_labels', data=train_labels_processed)
-    f.create_dataset('test_data', data=test_data)
-    f.create_dataset('test_labels', data=test_labels_processed)
+    f.create_dataset('test_data_clean', data=test_data_clean)
+    f.create_dataset('test_labels_clean', data=test_labels_clean)
+    f.create_dataset('test_data_corrupted', data=test_data_corrupted)
+    f.create_dataset('test_labels_corrupted', data=test_labels_corrupted)
 
+    f.create_dataset('test_images_clean', data=test_images_clean)
+    f.create_dataset('test_images_corrupted', data=test_images_corrupted)
     f.create_dataset('test_paths', data=np.array(test_paths, dtype='S'))
 
 print(f"Train shape: {train_data.shape}")
-print(f"Test shape: {test_data.shape}")
+print(f"Test clean shape: {test_data_clean.shape}")
+print(f"Test corrupted shape: {test_data_corrupted.shape}")
 print(f"Dane zapisane do {output_file}")
