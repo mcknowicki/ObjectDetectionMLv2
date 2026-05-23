@@ -84,7 +84,7 @@ for model_name, model_path in model_paths.items():
 
         # predykcje
         y_prob = model.predict_proba(x_test)[:, 1]
-        y_pred_default = (y_prob >= 0.5).astype(int) # standardowy próg rozpoznania 0.5
+        y_pred = (y_prob >= 0.5).astype(int) # standardowy próg rozpoznania 0.5
 
         # ROC/AUC
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
@@ -112,9 +112,6 @@ for model_name, model_path in model_paths.items():
         plt.grid()
         plt.show()
 
-        # predykcja z najlepszym progiem
-        y_pred_best = (y_prob >= best_threshold).astype(int)
-
         roc_data.append((
             model_name,
             test_name,
@@ -124,8 +121,8 @@ for model_name, model_path in model_paths.items():
             best_idx
         ))
 
-        # confusion matrix (dla best treshold)
-        cm = confusion_matrix(y_test, y_pred_best)
+        # confusion matrix
+        cm = confusion_matrix(y_test, y_pred)
         cm_data.append((
             model_name,
             test_name,
@@ -134,15 +131,10 @@ for model_name, model_path in model_paths.items():
         ))
 
         # metryki
-        precision_default = precision_score(y_test, y_pred_default)
-        recall_default = recall_score(y_test, y_pred_default)
-        f1_default = f1_score(y_test, y_pred_default)
-        acc_default = accuracy_score(y_test, y_pred_default)
-
-        precision_best = precision_score(y_test, y_pred_best)
-        recall_best = recall_score(y_test, y_pred_best)
-        f1_best = f1_score(y_test, y_pred_best)
-        acc_best = accuracy_score(y_test, y_pred_best)
+        precision_default = precision_score(y_test, y_pred)
+        recall_default = recall_score(y_test, y_pred)
+        f1_default = f1_score(y_test, y_pred)
+        acc_default = accuracy_score(y_test, y_pred)
 
         # overfitting
         overfit_gap = metrics["cv_score"] - metrics["test_accuracy"]
@@ -153,23 +145,17 @@ for model_name, model_path in model_paths.items():
             "Test Variant": test_name,
 
             "AUC": roc_auc,
-            "Best Threshold": best_threshold,
 
-            "Accuracy (0.5)": acc_default,
-            "F1 (0.5)": f1_default,
-
-            "Accuracy (best)": acc_best,
-            "F1 (best)": f1_best,
-
-            "Precision (best)": precision_best,
-            "Recall (best)": recall_best,
+            "Accuracy": acc_default,
+            "Precision": precision_default,
+            "Recall": recall_default,
+            "F1": f1_default,
 
             "CV Score": metrics["cv_score"],
             "Overfitting Gap": overfit_gap,
 
             "Training Time [s]": metrics["training_time"],
-            "Inference Time [s]": metrics["inference_time"],
-            "Prediction/sample [s]": metrics["prediction_per_sample"]
+            "Inference Time [s]": metrics["inference_time"]
         })
 
         # wizualizacja błędów
@@ -179,8 +165,8 @@ for model_name, model_path in model_paths.items():
             print("Brak test_paths – pomijam wizualizację błędów")
         else:
             # błędne klasyfikacje
-            fp_idx = np.where((y_test == 0) & (y_pred_best == 1))[0]
-            fn_idx = np.where((y_test == 1) & (y_pred_best == 0))[0]
+            fp_idx = np.where((y_test == 0) & (y_pred == 1))[0]
+            fn_idx = np.where((y_test == 1) & (y_pred == 0))[0]
 
 
             def show_errors(indices, title, max_images=6):
@@ -191,7 +177,7 @@ for model_name, model_path in model_paths.items():
 
                     plt.subplot(2, 3, i + 1)
                     plt.imshow(img, cmap='gray')
-                    plt.title(f"T:{y_test[idx]} P:{y_pred_best[idx]} ({y_prob[idx]:.2f})")
+                    plt.title(f"T:{y_test[idx]} P:{y_pred[idx]} ({y_prob[idx]:.2f})")
                     plt.axis('off')
 
                 plt.suptitle(title)
@@ -276,14 +262,14 @@ for model_name in df["Model"].unique():
         (df["Test Variant"] == "Corrupted")
     ].iloc[0]
 
-    accuracy_clean = clean_row["Accuracy (best)"]
-    accuracy_corrupted = corrupted_row["Accuracy (best)"]
+    accuracy_clean = clean_row["Accuracy"]
+    accuracy_corrupted = corrupted_row["Accuracy"]
 
     auc_clean = clean_row["AUC"]
     auc_corrupted = corrupted_row["AUC"]
 
-    f1_clean = clean_row["F1 (best)"]
-    f1_corrupted = corrupted_row["F1 (best)"]
+    f1_clean = clean_row["F1"]
+    f1_corrupted = corrupted_row["F1"]
 
     robustness_results.append({
 

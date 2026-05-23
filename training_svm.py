@@ -59,7 +59,6 @@ start_inference = time.perf_counter()
 y_pred = best_model.predict(x_test)
 end_inference = time.perf_counter()
 inference_time = end_inference - start_inference
-prediction_per_sample = inference_time / len(x_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 
 # ROC / AUC
@@ -72,7 +71,6 @@ print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 print(f"Training time: {training_time:.4f} s")
 print(f"Inference time: {inference_time:.6f} s")
-print(f"Prediction per sample: {prediction_per_sample:.8f} s")
 
 # zapis modelu z metadanymi
 model_file = f'./data/models/{DATASET}/model_svm.p'
@@ -85,8 +83,7 @@ output = {
         "test_accuracy": test_accuracy,
         "auc": roc_auc,
         "training_time": training_time,
-        "inference_time": inference_time,
-        "prediction_per_sample": prediction_per_sample
+        "inference_time": inference_time
     },
     "data_config": {
         "img_size": img_size,

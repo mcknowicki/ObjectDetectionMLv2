@@ -8,8 +8,8 @@ from skimage.feature import hog
 import matplotlib.pyplot as plt
 
 #config
-model_path = './data/model_random_forest.p'
-img_path = './data/val/stop_test2.jpg'
+model_path = './data/models/roadsigns/model_random_forest.p'
+img_path = './data/special_inferences/stop_test4.png'
 
 # wczytanie modelu z pliku
 # finalnie program powinien wczytywać kolejno modele w pętli i podać predykcję dla każdego z nich
@@ -32,7 +32,7 @@ img = resize(img, IMG_SIZE)
 features, hog_image = hog(img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True, visualize=True)
 
 
-probabilities = model.predict_proba([features])[0]
+"""probabilities = model.predict_proba([features])[0]
 
 best_index = probabilities.argmax()
 best_prob = probabilities[best_index]
@@ -43,7 +43,7 @@ if best_prob < THRESHOLD:
     print(f"Obiekt nierozpoznany (pewność {best_prob:.2f})")
 else:
     pred_label = categories[best_index]
-    print(f"Predykcja: {pred_label} (pewność {best_prob:.2f})")
+    print(f"Predykcja: {pred_label} (pewność {best_prob:.2f})")"""
 
 # przedstawienie obrazu oraz
 plt.figure(figsize=(8, 4))
