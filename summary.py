@@ -82,15 +82,15 @@ for model_name, model_path in model_paths.items():
     for test_name, (x_test, y_test, test_images) in test_variants.items():
         print(f"\n===== {model_name} | TEST: {test_name} =====")
 
-        # predykcje
+        # predykcja
         y_prob = model.predict_proba(x_test)[:, 1]
-        y_pred = (y_prob >= 0.5).astype(int) # standardowy próg rozpoznania 0.5
+        y_pred = (y_prob >= 0.5).astype(int)
 
         # ROC/AUC
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
         roc_auc = auc(fpr, tpr)
 
-        # wskaźnik Youdena - dobranie progu rozpoznawania
+        # obliczenie najlepszego progu decyzyjnego
         youden_index = tpr - fpr
         best_idx = np.argmax(youden_index)
         best_threshold = thresholds[best_idx]
@@ -130,13 +130,13 @@ for model_name, model_path in model_paths.items():
             categories
         ))
 
-        # metryki
+        # metryki sklearn
         precision_default = precision_score(y_test, y_pred)
         recall_default = recall_score(y_test, y_pred)
         f1_default = f1_score(y_test, y_pred)
         acc_default = accuracy_score(y_test, y_pred)
 
-        # overfitting
+        # overfitting gap
         overfit_gap = metrics["cv_score"] - metrics["test_accuracy"]
 
         # wyniki
@@ -201,7 +201,7 @@ plt.figure(figsize=(8, 6))
 
 for model_name, test_name, fpr, tpr, roc_auc, best_idx in roc_data:
     plt.plot(fpr, tpr, label=f'{model_name} [{test_name}] (AUC={roc_auc:.2f})')
-    # punkt Youdena
+    # najlepszy próg decyzyjny
     plt.scatter(
         fpr[best_idx],
         tpr[best_idx],

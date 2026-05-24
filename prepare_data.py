@@ -137,7 +137,7 @@ print("Przetwarzanie zbioru treningowego...")
 for img_path, label in zip(train_files, train_labels):
     try:
         img = imread(img_path, as_gray=True)
-        # losowe rotacje w realistycznym zakresie
+        # losowe rotacje w zadanym zakresie
         angles = np.random.uniform(-20, 20, NUM_ROTATIONS)
 
         for angle in angles:
@@ -220,12 +220,7 @@ with h5py.File(output_file, 'w') as f:
     f.attrs['img_size'] = IMG_SIZE
     f.attrs['pixels_per_cell'] = PIXELS_PER_CELL
     f.attrs['cells_per_block'] = CELLS_PER_BLOCK
-    f.attrs['noise_std'] = NOISE_STD
-    f.attrs['blur_sigma'] = BLUR_SIGMA
     f.attrs['categories'] = categories
-    f.attrs['noise_probability'] = NOISE_PROBABILITY
-    f.attrs['blur_probability'] = BLUR_PROBABILITY
-    f.attrs['occlusion_probability'] = OCCLUSION_PROBABILITY
 
     f.create_dataset('train_data', data=train_data)
     f.create_dataset('train_labels', data=train_labels_processed)
