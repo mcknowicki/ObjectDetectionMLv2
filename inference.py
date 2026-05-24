@@ -1,27 +1,28 @@
 import pickle
 import os
 
-from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK, INPUT_DIR
+from config import IMG_SIZE, PIXELS_PER_CELL, CELLS_PER_BLOCK
 from skimage.io import imread
 from skimage.transform import resize
 from skimage.feature import hog
 import matplotlib.pyplot as plt
 
 #config
-model_path = './data/models/roadsigns/model_random_forest.p'
-img_path = './data/special_inferences/stop_test4.png'
+model_path = './data/models/roadsigns/model_svm.p'
+img_path = './data/additional_images/different_signs.jpg'
 
-# wczytanie modelu z pliku
-# finalnie program powinien wczytywać kolejno modele w pętli i podać predykcję dla każdego z nich
+# wczytanie modelu i kategorii z pliku
 if not os.path.exists(model_path):
     raise FileNotFoundError(f"Nie znaleziono modelu: {model_path}")
 
 with open(model_path, 'rb') as f:
-    model = pickle.load(f)
+    data = pickle.load(f)
 
-# wczytanie kategorii obiektów
-categories = [d for d in os.listdir(INPUT_DIR) if os.path.isdir(os.path.join(INPUT_DIR, d))]
-print(f"Wykryto następujące kategorie obiektów {categories}")
+model = data["model"]
+categories = data["categories"]
+
+print(f"Wczytane kategorie: {categories}")
+
 
 # wczytanie obrazu do sklasyfikowania oraz konwersja jak w przypadku treningu klasyfikatora
 if not os.path.exists(img_path):
@@ -32,20 +33,20 @@ img = resize(img, IMG_SIZE)
 features, hog_image = hog(img, pixels_per_cell=PIXELS_PER_CELL, cells_per_block=CELLS_PER_BLOCK, feature_vector=True, visualize=True)
 
 
-"""probabilities = model.predict_proba([features])[0]
+probabilities = model.predict_proba([features])[0]
 
 best_index = probabilities.argmax()
 best_prob = probabilities[best_index]
 
-THRESHOLD = 0.5  # do przetestowania i dobrania
+THRESHOLD = 0.75  # próg rozpoznania do
+pred_label = categories[best_index]
 
 if best_prob < THRESHOLD:
-    print(f"Obiekt nierozpoznany (pewność {best_prob:.2f})")
+    print(f"Obiekt nierozpoznany (probability {best_prob:.2f} {pred_label})")
 else:
-    pred_label = categories[best_index]
-    print(f"Predykcja: {pred_label} (pewność {best_prob:.2f})")"""
+    print(f"Predykcja: {pred_label} (probability {best_prob:.2f})")
 
-# przedstawienie obrazu oraz
+# przedstawienie obrazu oraz HOG
 plt.figure(figsize=(8, 4))
 plt.subplot(1, 2, 1)
 plt.imshow(img, cmap='gray')
