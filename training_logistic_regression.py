@@ -64,7 +64,7 @@ best_score = grid_search.best_score_
 y_pred = best_model.predict(x_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 
-# ROC / AUC
+# AUC
 y_prob = best_model.predict_proba(x_test)[:, 1]
 fpr, tpr, _ = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)

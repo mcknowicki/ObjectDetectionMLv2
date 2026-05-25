@@ -47,7 +47,7 @@ with h5py.File(input_file, 'r') as f:
 print(f"Wczytano dane testowe (clean): {x_test_clean.shape}")
 print(f"Wczytano dane testowe (corrupted): {x_test_corrupted.shape}")
 
-# struktury
+# organizacja danych
 results = []
 roc_data = []
 cm_data = []
@@ -66,7 +66,7 @@ test_variants = {
     )
 }
 
-# pętla analizująca po kolei modele
+# pętla analizująca kolejno modele
 for model_name, model_path in model_paths.items():
 
     if not os.path.exists(model_path):
@@ -79,6 +79,11 @@ for model_name, model_path in model_paths.items():
     model = data["model"]
     metrics = data["metrics"]
     categories = data["categories"]
+    data_config = data["data_config"]
+
+    img_size = data_config["img_size"]
+    pixels_per_cell = data_config["pixels_per_cell"]
+    cells_per_block = data_config["cells_per_block"]
 
     for test_name, (x_test, y_test, test_images) in test_variants.items():
         print(f"\n===== {model_name} | TEST: {test_name} =====")
@@ -92,7 +97,7 @@ for model_name, model_path in model_paths.items():
         # predykcja
         y_pred = (y_prob >= 0.5).astype(int)
 
-        # ROC/AUC
+        # ROC i AUC
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
         roc_auc = auc(fpr, tpr)
 
@@ -150,8 +155,11 @@ for model_name, model_path in model_paths.items():
             "Model": model_name,
             "Test Variant": test_name,
 
-            "AUC": roc_auc,
+            "IMG Size": img_size,
+            "Pixels per cell": pixels_per_cell,
+            "Cells per block": cells_per_block,
 
+            "AUC": roc_auc,
             "Accuracy": acc_default,
             "Precision": precision_default,
             "Recall": recall_default,
