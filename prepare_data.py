@@ -46,7 +46,7 @@ all_labels = []
 # przetwarzanie danych
 for category_index, category in enumerate(categories):
     cat_path = os.path.join(INPUT_DIR, category)
-    files = os.listdir(cat_path)
+    files = sorted(os.listdir(cat_path))
 
     for file in files:
         full_path = os.path.join(cat_path, file)
@@ -138,7 +138,7 @@ for img_path, label in zip(train_files, train_labels):
     try:
         img = imread(img_path, as_gray=True)
         # losowe rotacje w zadanym zakresie
-        angles = np.random.uniform(-20, 20, NUM_ROTATIONS)
+        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
 
         for angle in angles:
             rotated_img = rotate(
