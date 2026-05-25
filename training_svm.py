@@ -17,8 +17,8 @@ input_file = f'./data/dataset_{DATASET}.h5'
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
     y_train = np.array(f['train_labels'])
-    x_test = np.array(f['test_clean_data'])
-    y_test = np.array(f['test_clean_labels'])
+    x_test = np.array(f['test_data_clean'])
+    y_test = np.array(f['test_labels_clean'])
 
     img_size = f.attrs['img_size']
     pixels_per_cell = f.attrs['pixels_per_cell']

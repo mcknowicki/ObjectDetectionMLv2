@@ -85,21 +85,18 @@ test_images_corrupted = []
 
 # funkcja generująca zakłócenia
 def corrupt_image(img):
-
     corrupted = img.copy()
 
-    # gaussian noise
+    # szum
     if np.random.rand() < NOISE_PROBABILITY:
-
         corrupted = random_noise(
             corrupted,
             mode='gaussian',
             var=NOISE_STD ** 2
         )
 
-    # blur
+    # rozmycie
     if np.random.rand() < BLUR_PROBABILITY:
-
         corrupted = gaussian(
             corrupted,
             sigma=BLUR_SIGMA
@@ -107,14 +104,10 @@ def corrupt_image(img):
 
     # losowe zasłonięcie fragmentu
     if ENABLE_OCCLUSION and np.random.rand() < OCCLUSION_PROBABILITY:
-
         h, w = corrupted.shape
-
-        occ_size = np.random.randint(20, 40)
-
+        occ_size = np.random.randint(30, 45)
         x = np.random.randint(0, w - occ_size)
         y = np.random.randint(0, h - occ_size)
-
         corrupted[y:y + occ_size, x:x + occ_size] = BG_VALUE
 
     return corrupted
