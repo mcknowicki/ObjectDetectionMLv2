@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import os
+import time
 
 from config import DATASET
 from sklearn.metrics import (
@@ -82,8 +83,13 @@ for model_name, model_path in model_paths.items():
     for test_name, (x_test, y_test, test_images) in test_variants.items():
         print(f"\n===== {model_name} | TEST: {test_name} =====")
 
-        # predykcja
+        # pomiar czasu predykcji
+        start_inference = time.perf_counter()
         y_prob = model.predict_proba(x_test)[:, 1]
+        end_inference = time.perf_counter()
+        inference_time = end_inference - start_inference
+
+        # predykcja
         y_pred = (y_prob >= 0.5).astype(int)
 
         # ROC/AUC
@@ -155,11 +161,9 @@ for model_name, model_path in model_paths.items():
             "Overfitting Gap": overfit_gap,
 
             "Training Time [s]": metrics["training_time"],
-            "Inference Time [s]": metrics["inference_time"]
+            "Inference Time [s]": inference_time
         })
 
-        # wizualizacja błędów
-        from skimage.io import imread
 
         if file_paths is None:
             print("Brak test_paths – pomijam wizualizację błędów")
