@@ -8,6 +8,7 @@ from config import (
     PIXELS_PER_CELL,
     CELLS_PER_BLOCK,
     DATASET,
+    SUFFIX,
     INPUT_DIR,
     NUM_ROTATIONS,
     NOISE_STD,
@@ -87,14 +88,6 @@ test_images_corrupted = []
 def corrupt_image(img):
     corrupted = img.copy()
 
-    # szum
-    if np.random.rand() < NOISE_PROBABILITY:
-        corrupted = random_noise(
-            corrupted,
-            mode='gaussian',
-            var=NOISE_STD ** 2
-        )
-
     # rozmycie
     if np.random.rand() < BLUR_PROBABILITY:
         corrupted = gaussian(
@@ -109,6 +102,14 @@ def corrupt_image(img):
         x = np.random.randint(0, w - occ_size)
         y = np.random.randint(0, h - occ_size)
         corrupted[y:y + occ_size, x:x + occ_size] = BG_VALUE
+
+    # szum
+    if np.random.rand() < NOISE_PROBABILITY:
+        corrupted = random_noise(
+            corrupted,
+            mode='gaussian',
+            var=NOISE_STD ** 2
+        )
 
     return corrupted
 
@@ -207,7 +208,7 @@ train_labels_processed = train_labels_processed[indices]
 train_labels = train_labels[:MAX_SAMPLES]"""
 
 # zapis danych do pliku HDF5
-output_file = f'./data/dataset_{DATASET}.h5'
+output_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 
 with h5py.File(output_file, 'w') as f:
     f.attrs['img_size'] = IMG_SIZE

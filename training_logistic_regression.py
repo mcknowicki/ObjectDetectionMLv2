@@ -3,7 +3,7 @@ import h5py
 import pickle
 import time
 
-from config import DATASET
+from config import DATASET, SUFFIX
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, roc_curve, auc
@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 # wczytanie danych z pliku HDF5
-input_file = f'./data/dataset_{DATASET}.h5'
+input_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
     y_train = np.array(f['train_labels'])
@@ -36,18 +36,13 @@ pipeline = Pipeline([
     ))
 ])
 
-# trening modelu z walidacją krzyżową *5
+# parametry modelu
 parameters = {
     'logreg__C': [0.1, 1, 10],
     'logreg__solver': ['lbfgs']
 }
 
-grid_search = GridSearchCV(
-    pipeline,
-    parameters,
-    cv=5,
-    n_jobs=-1
-)
+grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
 # pomiar czasu treningu
 start_train = time.perf_counter()
@@ -75,7 +70,7 @@ print(f"AUC: {roc_auc:.4f}")
 print(f"Training time: {training_time:.4f} s")
 
 # zapis modelu z metadanymi
-model_file = f'./data/models/{DATASET}/model_logistic_regression.p'
+model_file = f'./data/models/{DATASET}{SUFFIX}/model_logistic_regression.p'
 
 output = {
     "model": best_model,

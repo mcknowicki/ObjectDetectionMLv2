@@ -3,7 +3,7 @@ import h5py
 import pickle
 import time
 
-from config import DATASET
+from config import DATASET, SUFFIX
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, roc_curve, auc
@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 # wczytanie danych z pliku HDF5
-input_file = f'./data/dataset_{DATASET}.h5'
+input_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
@@ -29,13 +29,13 @@ print(f"Wczytano dane z {input_file}")
 print(f"Train shape: {x_train.shape}, Test shape: {x_test.shape}")
 print(f"Kategorie: {categories}")
 
-# pipeline - skalowanie  + knn
+# pipeline - skalowanie  + svm
 pipeline = Pipeline([
     ('scaler', StandardScaler()),
     ('svm', SVC(probability=True))
 ])
 
-# trening modelu z walidacją krzyżową *5
+# parametry modelu
 parameters = {
     'svm__C': [1, 10],
     'svm__gamma': ['scale']
@@ -69,7 +69,7 @@ print(f"AUC: {roc_auc:.4f}")
 print(f"Training time: {training_time:.4f} s")
 
 # zapis modelu z metadanymi
-model_file = f'./data/models/{DATASET}/model_svm.p'
+model_file = f'./data/models/{DATASET}{SUFFIX}/model_svm.p'
 
 output = {
     "model": best_model,

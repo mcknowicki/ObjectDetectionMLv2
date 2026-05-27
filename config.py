@@ -7,6 +7,7 @@ NUM_ROTATIONS = 5 # liczba rotacji na obraz
 # wybór danych wyjściowych
 DATASET = 'roadsigns'
 #DATASET = 'buildings'
+SUFFIX = '1'
 INPUT_DIR = f'./data/input/{DATASET}'
 
 # konfiguracja zakłóceń

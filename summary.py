@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import time
 
-from config import DATASET
+from config import DATASET, SUFFIX
 from sklearn.metrics import (
     roc_curve, auc,
     confusion_matrix,
@@ -19,15 +19,15 @@ from sklearn.metrics import (
 
 # słownik modeli ML
 model_paths = {
-    "KNN": f'./data/models/{DATASET}/model_knn.p',
-    "Random Forest": f'./data/models/{DATASET}/model_random_forest.p',
-    "Logistic Regression": f'./data/models/{DATASET}/model_logistic_regression.p',
-    "SVM": f'./data/models/{DATASET}/model_svm.p',
-    "MLP": f'./data/models/{DATASET}/model_mlp.p'
+    "KNN": f'./data/models/{DATASET}{SUFFIX}/model_knn.p',
+    "Random Forest": f'./data/models/{DATASET}{SUFFIX}/model_random_forest.p',
+    "Logistic Regression": f'./data/models/{DATASET}{SUFFIX}/model_logistic_regression.p',
+    "SVM": f'./data/models/{DATASET}{SUFFIX}/model_svm.p',
+    "MLP": f'./data/models/{DATASET}{SUFFIX}/model_mlp.p'
 }
 
 # wczytanie danych testowych
-input_file = f'./data/dataset_{DATASET}.h5'
+input_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 
 with h5py.File(input_file, 'r') as f:
     x_test_clean = np.array(f['test_data_clean'])
@@ -51,6 +51,7 @@ print(f"Wczytano dane testowe (corrupted): {x_test_corrupted.shape}")
 results = []
 roc_data = []
 cm_data = []
+
 
 test_variants = {
     "Clean": (
@@ -86,7 +87,7 @@ for model_name, model_path in model_paths.items():
     cells_per_block = data_config["cells_per_block"]
 
     for test_name, (x_test, y_test, test_images) in test_variants.items():
-        print(f"\n===== {model_name} | TEST: {test_name} =====")
+        print(f"\n{model_name}: {test_name}")
 
         # pomiar czasu predykcji
         start_inference = time.perf_counter()
@@ -174,7 +175,7 @@ for model_name, model_path in model_paths.items():
 
 
         if file_paths is None:
-            print("Brak test_paths – pomijam wizualizację błędów")
+            print("Brak test_paths – wizualizacja błędów niemożliwa")
         else:
             # błędne klasyfikacje
             fp_idx = np.where((y_test == 0) & (y_pred == 1))[0]
@@ -329,11 +330,11 @@ plt.show()
 
 # zaokrąglenie wartości i zapis do csv
 df_rounded = df_sorted.round(4)
-output_csv = f'./data/results_{DATASET}.csv'
+output_csv = f'./data/results_{DATASET}{SUFFIX}.csv'
 df_rounded.to_csv(output_csv, index=False)
 print(f"\nWyniki zapisane do: {output_csv}")
 
 df_robustness_rounded = df_robustness.round(4)
-output_csv_robustness = f'./data/results_{DATASET}_robustness.csv'
+output_csv_robustness = f'./data/results_{DATASET}{SUFFIX}_robustness.csv'
 df_robustness_rounded.to_csv(output_csv_robustness, index=False)
 print(f"\nTabela odporności zapisana do: {output_csv_robustness}")
