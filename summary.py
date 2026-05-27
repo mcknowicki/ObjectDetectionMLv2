@@ -381,6 +381,7 @@ df_robustness = pd.DataFrame(robustness_results)
 print("\nODPORNOŚĆ MODELI NA ZAKŁÓCENIA:")
 print(df_robustness.round(4))
 
+# wykres odporności poszczególnych modeli
 plt.figure(figsize=(8, 5))
 
 plt.bar(
@@ -394,6 +395,7 @@ plt.title("Odporność modeli na zakłócenia")
 plt.grid(axis='y')
 
 plt.show()
+
 
 # zaokrąglenie wartości i zapis do csv
 df_rounded = df.round(4)
