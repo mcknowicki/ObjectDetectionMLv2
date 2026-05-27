@@ -19,3 +19,6 @@ ENABLE_OCCLUSION = True # trigger losowych zasłonięć obrazów
 NOISE_PROBABILITY = 0.8
 BLUR_PROBABILITY = 0.6
 OCCLUSION_PROBABILITY = 0.6
+
+# trigger wyświetlający błędnie zaklasyfikowane obrazy w summary
+SHOW_FALSE_PREDICTIONS = False

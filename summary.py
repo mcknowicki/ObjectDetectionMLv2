@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import time
 
-from config import DATASET, SUFFIX
+from config import DATASET, SUFFIX, SHOW_FALSE_PREDICTIONS
 from sklearn.metrics import (
     roc_curve, auc,
     confusion_matrix,
@@ -19,9 +19,9 @@ from sklearn.metrics import (
 
 # słownik modeli ML
 model_paths = {
+    "Logistic Regression": f'./data/models/{DATASET}{SUFFIX}/model_logistic_regression.p',
     "KNN": f'./data/models/{DATASET}{SUFFIX}/model_knn.p',
     "Random Forest": f'./data/models/{DATASET}{SUFFIX}/model_random_forest.p',
-    "Logistic Regression": f'./data/models/{DATASET}{SUFFIX}/model_logistic_regression.p',
     "SVM": f'./data/models/{DATASET}{SUFFIX}/model_svm.p',
     "MLP": f'./data/models/{DATASET}{SUFFIX}/model_mlp.p'
 }
@@ -47,11 +47,12 @@ with h5py.File(input_file, 'r') as f:
 print(f"Wczytano dane testowe (clean): {x_test_clean.shape}")
 print(f"Wczytano dane testowe (corrupted): {x_test_corrupted.shape}")
 
-# organizacja danych
+
+# organizacja struktur danych
 results = []
 roc_data = []
 cm_data = []
-
+f1_data = []
 
 test_variants = {
     "Clean": (
@@ -67,7 +68,8 @@ test_variants = {
     )
 }
 
-# pętla analizująca kolejno modele
+
+# pętla obliczająca kolejno metryki dla modeli
 for model_name, model_path in model_paths.items():
 
     if not os.path.exists(model_path):
@@ -89,13 +91,11 @@ for model_name, model_path in model_paths.items():
     for test_name, (x_test, y_test, test_images) in test_variants.items():
         print(f"\n{model_name}: {test_name}")
 
-        # pomiar czasu predykcji
+        # predykcja wraz z pomiarem czasu
         start_inference = time.perf_counter()
         y_prob = model.predict_proba(x_test)[:, 1]
         end_inference = time.perf_counter()
         inference_time = end_inference - start_inference
-
-        # predykcja
         y_pred = (y_prob >= 0.5).astype(int)
 
         # ROC i AUC
@@ -114,15 +114,13 @@ for model_name, model_path in model_paths.items():
             y_pred_thr = (y_prob >= thr).astype(int)
             f1_scores.append(f1_score(y_test, y_pred_thr))
 
-        plt.figure(figsize=(6, 4))
-        plt.plot(thresholds, f1_scores)
-        plt.axvline(best_threshold, linestyle='--', label='Best threshold')
-        plt.xlabel("Threshold")
-        plt.ylabel("F1 score")
-        plt.title(f"F1 vs threshold - {model_name}")
-        plt.legend()
-        plt.grid()
-        plt.show()
+        f1_data.append((
+            model_name,
+            test_name,
+            thresholds,
+            f1_scores,
+            best_threshold
+        ))
 
         roc_data.append((
             model_name,
@@ -142,7 +140,7 @@ for model_name, model_path in model_paths.items():
             categories
         ))
 
-        # metryki sklearn
+        # metryki z sklearn
         precision_default = precision_score(y_test, y_pred)
         recall_default = recall_score(y_test, y_pred)
         f1_default = f1_score(y_test, y_pred)
@@ -151,7 +149,7 @@ for model_name, model_path in model_paths.items():
         # overfitting gap
         overfit_gap = metrics["cv_score"] - metrics["test_accuracy"]
 
-        # wyniki
+        # zapis wyników
         results.append({
             "Model": model_name,
             "Test Variant": test_name,
@@ -173,92 +171,160 @@ for model_name, model_path in model_paths.items():
             "Inference Time [s]": inference_time
         })
 
+        # wyświetlanie błędnych predykcji
+        if SHOW_FALSE_PREDICTIONS:
+            if file_paths is None:
+                print("Brak test_paths – wizualizacja błędów niemożliwa")
+            else:
+                fp_idx = np.where((y_test == 0) & (y_pred == 1))[0]
+                fn_idx = np.where((y_test == 1) & (y_pred == 0))[0]
 
-        if file_paths is None:
-            print("Brak test_paths – wizualizacja błędów niemożliwa")
-        else:
-            # błędne klasyfikacje
-            fp_idx = np.where((y_test == 0) & (y_pred == 1))[0]
-            fn_idx = np.where((y_test == 1) & (y_pred == 0))[0]
+                # funkcja wyświetlająca obrazy w oknie
+                def show_false(indices, title, images_per_window=6):
+                    if len(indices) == 0:
+                        print(f"Brak błędnych klasyfikacji dla modelu {title}")
+                        return
+
+                    for start in range(0, len(indices), images_per_window):
+                        batch = indices[start:start + images_per_window]
+
+                        plt.figure(figsize=(12, 6))
+
+                        for i, idx in enumerate(batch):
+                            img = test_images[idx]
+
+                            plt.subplot(2, 3, i + 1)
+                            plt.imshow(img, cmap='gray')
+                            plt.title(f"T:{y_test[idx]} P:{y_pred[idx]} ({y_prob[idx]:.2f})")
+                            plt.axis('off')
+
+                        window_no = start // images_per_window + 1
+                        total_windows = int(np.ceil(len(indices) / images_per_window))
+
+                        plt.suptitle(f"{title} ({window_no}/{total_windows})")
+                        plt.tight_layout()
+                        plt.show()
+
+                # użycie funkcji dla FP i FN
+                show_false(
+                    fp_idx,
+                    f"{model_name} [{test_name}] - False Positives"
+                )
+
+                show_false(
+                    fn_idx,
+                    f"{model_name} [{test_name}] - False Negatives"
+                )
 
 
-            def show_errors(indices, title, max_images=6):
-                plt.figure(figsize=(12, 6))
+# pętla rysująca wykresy i macierz pomyłek
+for model_name in model_paths.keys():
 
-                for i, idx in enumerate(indices[:max_images]):
-                    img = test_images[idx]
+    # ROC
+    model_roc_data = [
+        item for item in roc_data
+        if item[0] == model_name
+    ]
 
-                    plt.subplot(2, 3, i + 1)
-                    plt.imshow(img, cmap='gray')
-                    plt.title(f"T:{y_test[idx]} P:{y_pred[idx]} ({y_prob[idx]:.2f})")
-                    plt.axis('off')
+    if len(model_roc_data) == 0:
+        continue
 
-                plt.suptitle(title)
-                plt.tight_layout()
-                plt.show()
+    plt.figure(figsize=(7, 6))
+
+    for _, test_name, fpr, tpr, roc_auc, best_idx in model_roc_data:
+
+        plt.plot(
+            fpr,
+            tpr,
+            label=f'{test_name} (AUC={roc_auc:.2f})'
+        )
+
+        plt.scatter(
+            fpr[best_idx],
+            tpr[best_idx],
+            s=50
+        )
+
+    plt.plot([0, 1], [0, 1], linestyle='--')
+
+    plt.xlabel("FPR")
+    plt.ylabel("TPR")
+    plt.title(f"ROC - {model_name}")
+    plt.legend()
+    plt.grid()
+
+    plt.show()
+
+    # F1 vs threshold
+    model_f1_data = [
+        item for item in f1_data
+        if item[0] == model_name
+    ]
+
+    if len(model_f1_data) == 0:
+        continue
+
+    plt.figure(figsize=(7, 5))
+
+    for _, test_name, thresholds, f1_scores, best_threshold in model_f1_data:
+        line, = plt.plot(
+            thresholds,
+            f1_scores,
+            label=test_name
+        )
+
+        color = line.get_color()
+
+        plt.axvline(
+            best_threshold,
+            linestyle='--',
+            color=color,
+            alpha=0.8
+        )
+
+    plt.xlabel("Threshold")
+    plt.ylabel("F1 score")
+    plt.title(f"F1 vs threshold - {model_name}")
+
+    plt.legend()
+    plt.grid()
+
+    plt.show()
+
+    # confusion matrix
+    model_cm_data = [
+        item for item in cm_data
+        if item[0] == model_name
+    ]
+
+    if len(model_cm_data) == 0:
+        continue
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+    for ax, (_, test_name, cm, categories) in zip(axes, model_cm_data):
+
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt='d',
+            cmap='Blues',
+            xticklabels=categories,
+            yticklabels=categories,
+            ax=ax
+        )
+
+        ax.set_title(test_name)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+
+    plt.suptitle(f"Confusion Matrix - {model_name}")
+
+    plt.tight_layout()
+    plt.show()
 
 
-            show_errors(
-                fp_idx,
-                f"{model_name} [{test_name}] - False Positives"
-            )
-
-            show_errors(
-                fn_idx,
-                f"{model_name} [{test_name}] - False Negatives"
-            )
-
-
-# wspólny wykres ROC
-plt.figure(figsize=(8, 6))
-
-for model_name, test_name, fpr, tpr, roc_auc, best_idx in roc_data:
-    plt.plot(fpr, tpr, label=f'{model_name} [{test_name}] (AUC={roc_auc:.2f})')
-    # najlepszy próg decyzyjny
-    plt.scatter(
-        fpr[best_idx],
-        tpr[best_idx],
-        s=50
-    )
-
-plt.plot([0, 1], [0, 1], linestyle='--')
-plt.xlabel("FPR")
-plt.ylabel("TPR")
-plt.title("Porównanie ROC modeli")
-plt.legend()
-plt.grid()
-plt.show()
-
-# porównanie confusion matrix
-num_models = len(cm_data)
-cols = min(3, num_models)
-rows = int(np.ceil(num_models / cols))
-
-fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 5 * rows))
-
-# gdy jest tylko 1 model
-if num_models == 1:
-    axes = [axes]
-
-axes = np.array(axes).reshape(-1)
-
-for ax, (model_name, test_name, cm, categories) in zip(axes, cm_data):
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=categories,
-                yticklabels=categories,
-                ax=ax)
-    ax.set_title(f"{model_name} [{test_name}]")
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("Actual")
-
-# usunięcie pustych subplotów
-for i in range(len(cm_data), len(axes)):
-    fig.delaxes(axes[i])
-
-plt.tight_layout()
-plt.show()
-
-# tabela wyników
+# przygotowanie tabeli wyników
 df = pd.DataFrame(results)
 
 robustness_results = []
@@ -284,6 +350,7 @@ for model_name in df["Model"].unique():
     f1_clean = clean_row["F1"]
     f1_corrupted = corrupted_row["F1"]
 
+    # przygotowanie tabeli odporności na zakłócenia
     robustness_results.append({
 
         "Model": model_name,
@@ -305,9 +372,9 @@ for model_name in df["Model"].unique():
         )
     })
 
-df_sorted = df.sort_values(by="AUC", ascending=False)
+# wydruk tabel oraz ich eksport
 print("\nTABELA WYNIKÓW:")
-print(df_sorted)
+print(df)
 
 df_robustness = pd.DataFrame(robustness_results)
 
@@ -329,7 +396,7 @@ plt.grid(axis='y')
 plt.show()
 
 # zaokrąglenie wartości i zapis do csv
-df_rounded = df_sorted.round(4)
+df_rounded = df.round(4)
 output_csv = f'./data/results_{DATASET}{SUFFIX}.csv'
 df_rounded.to_csv(output_csv, index=False)
 print(f"\nWyniki zapisane do: {output_csv}")
