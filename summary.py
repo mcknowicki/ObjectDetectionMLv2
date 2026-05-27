@@ -69,7 +69,7 @@ test_variants = {
 }
 
 
-# pętla obliczająca kolejno metryki dla modeli
+# pętla ewaluacji modeli
 for model_name, model_path in model_paths.items():
 
     if not os.path.exists(model_path):
