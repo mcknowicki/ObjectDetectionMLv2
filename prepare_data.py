@@ -11,6 +11,8 @@ from config import (
     SUFFIX,
     INPUT_DIR,
     NUM_ROTATIONS,
+    MIN_ROTATION_VALUE,
+    MAX_ROTATION_VALUE,
     NOISE_STD,
     BLUR_SIGMA,
     ENABLE_OCCLUSION,
@@ -147,7 +149,7 @@ for img_path, label in zip(train_files, train_labels):
     try:
         img = imread(img_path, as_gray=True)
         # losowe rotacje w zadanym zakresie
-        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
+        angles = np.random.uniform(MIN_ROTATION_VALUE, MAX_ROTATION_VALUE, NUM_ROTATIONS)
 
         for angle in angles:
             rotated_img = rotate(
@@ -173,7 +175,7 @@ print("Przetwarzanie zbioru walidacyjnego...")
 for img_path, label in zip(val_files, val_labels):
     try:
         img = imread(img_path, as_gray=True)
-        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
+        angles = np.random.uniform(MIN_ROTATION_VALUE, MAX_ROTATION_VALUE, NUM_ROTATIONS)
 
         for angle in angles:
             rotated_img = rotate(
@@ -200,7 +202,7 @@ for img_path, label in zip(test_files, test_labels):
 
     try:
         img = imread(img_path, as_gray=True)
-        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
+        angles = np.random.uniform(MIN_ROTATION_VALUE, MAX_ROTATION_VALUE, NUM_ROTATIONS)
 
         for angle in angles:
             rotated_img = rotate(

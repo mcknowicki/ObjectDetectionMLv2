@@ -5,7 +5,7 @@ import time
 
 from config import DATASET, SUFFIX
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, PredefinedSplit
 from sklearn.metrics import accuracy_score, roc_curve, auc
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -15,6 +15,8 @@ input_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
     y_train = np.array(f['train_labels'])
+    x_val = np.array(f['val_data'])
+    y_val = np.array(f['val_labels'])
     x_test = np.array(f['test_data_clean'])
     y_test = np.array(f['test_labels_clean'])
 
@@ -24,7 +26,9 @@ with h5py.File(input_file, 'r') as f:
     categories = list(f.attrs['categories'])
 
 print(f"Wczytano dane z {input_file}")
-print(f"Train shape: {x_train.shape}, Test shape: {x_test.shape}")
+print(f"Train shape: {x_train.shape}")
+print(f"Validation shape: {x_val.shape}")
+print(f"Test shape: {x_test.shape}")
 print(f"Kategorie: {categories}")
 
 # pipeline - skalowanie  + logistic regression
@@ -42,11 +46,30 @@ parameters = {
     'logreg__solver': ['lbfgs']
 }
 
-grid_search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
+
+# sklejenie danych walidacyjnych i treningowych w jedną tablicę
+x_train_val = np.concatenate([x_train, x_val])
+y_train_val = np.concatenate([y_train, y_val])
+
+# instrukcja podziału danych dla funkcji GridSearchCV
+test_fold = np.concatenate([
+    np.full(len(x_train), -1),
+    np.zeros(len(x_val))
+])
+
+predefined_split = PredefinedSplit(test_fold)
+
+# walidacja krzyżowa
+grid_search = GridSearchCV(
+    pipeline,
+    parameters,
+    cv=predefined_split,
+    n_jobs=-1
+)
 
 # pomiar czasu treningu
 start_train = time.perf_counter()
-grid_search.fit(x_train, y_train)
+grid_search.fit(x_train_val, y_train_val)
 end_train = time.perf_counter()
 training_time = end_train - start_train
 
@@ -64,7 +87,7 @@ y_prob = best_model.predict_proba(x_test)[:, 1]
 fpr, tpr, _ = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
 
-print(f"CV score: {best_score:.4f}")
+print(f"Validation score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 print(f"Training time: {training_time:.4f} s")
@@ -76,7 +99,7 @@ output = {
     "model": best_model,
     "categories": categories,
     "metrics": {
-        "cv_score": best_score,
+        "val_score": best_score,
         "test_accuracy": test_accuracy,
         "auc": roc_auc,
         "training_time": training_time

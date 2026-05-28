@@ -146,7 +146,7 @@ for model_name, model_path in model_paths.items():
         acc_default = accuracy_score(y_test, y_pred)
 
         # overfitting gap
-        overfit_gap = metrics["cv_score"] - metrics["test_accuracy"]
+        overfit_gap = metrics["val_score"] - metrics["test_accuracy"]
 
         # zapis wyników
         results.append({
@@ -163,7 +163,7 @@ for model_name, model_path in model_paths.items():
             "Recall": recall_default,
             "F1": f1_default,
 
-            "CV Score": metrics["cv_score"],
+            "Validation Score": metrics["val_score"],
             "Overfitting Gap": overfit_gap,
 
             "Training Time [s]": metrics["training_time"],
@@ -171,6 +171,7 @@ for model_name, model_path in model_paths.items():
         })
 
         # wyświetlanie błędnych predykcji
+        # można włączyć parametrem SHOW_FALSE_PREDICTIONS w config.py
         if SHOW_FALSE_PREDICTIONS:
             if file_paths is None:
                 print("Brak test_paths – wizualizacja błędów niemożliwa")

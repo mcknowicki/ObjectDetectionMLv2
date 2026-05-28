@@ -81,7 +81,7 @@ y_prob = best_model.predict_proba(x_test)[:, 1]
 fpr, tpr, _ = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
 
-print(f"CV score: {best_score:.4f}")
+print(f"Validation score: {best_score:.4f}")
 print(f"Test accuracy: {test_accuracy:.4f}")
 print(f"AUC: {roc_auc:.4f}")
 print(f"Training time: {training_time:.4f} s")
@@ -92,7 +92,7 @@ output = {
     "model": best_model,
     "categories": categories,
     "metrics": {
-        "cv_score": best_score,
+        "val_score": best_score,
         "test_accuracy": test_accuracy,
         "auc": roc_auc,
         "training_time": training_time
