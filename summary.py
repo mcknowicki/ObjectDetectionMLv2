@@ -22,8 +22,7 @@ model_paths = {
     "Logistic Regression": f'./data/models/{DATASET}{SUFFIX}/model_logistic_regression.p',
     "KNN": f'./data/models/{DATASET}{SUFFIX}/model_knn.p',
     "Random Forest": f'./data/models/{DATASET}{SUFFIX}/model_random_forest.p',
-    "SVM": f'./data/models/{DATASET}{SUFFIX}/model_svm.p',
-    "MLP": f'./data/models/{DATASET}{SUFFIX}/model_mlp.p'
+    "SVM": f'./data/models/{DATASET}{SUFFIX}/model_svm.p'
 }
 
 # wczytanie danych testowych

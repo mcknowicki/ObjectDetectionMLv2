@@ -5,7 +5,7 @@ import time
 
 from config import DATASET, SUFFIX
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, PredefinedSplit
 from sklearn.metrics import accuracy_score, roc_curve, auc
 
 
@@ -14,6 +14,8 @@ input_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
 with h5py.File(input_file, 'r') as f:
     x_train = np.array(f['train_data'])
     y_train = np.array(f['train_labels'])
+    x_val = np.array(f['val_data'])
+    y_val = np.array(f['val_labels'])
     x_test = np.array(f['test_data_clean'])
     y_test = np.array(f['test_labels_clean'])
 
@@ -23,7 +25,9 @@ with h5py.File(input_file, 'r') as f:
     categories = list(f.attrs['categories'])
 
 print(f"Wczytano dane z {input_file}")
-print(f"Train shape: {x_train.shape}, Test shape: {x_test.shape}")
+print(f"Train shape: {x_train.shape}")
+print(f"Validation shape: {x_val.shape}")
+print(f"Test shape: {x_test.shape}")
 print(f"Kategorie: {categories}")
 
 
@@ -36,11 +40,30 @@ parameters = {
     'min_samples_split': [2, 5]
 }
 
-grid_search = GridSearchCV(classifier, parameters, cv=5, n_jobs=-1)
+
+# sklejenie danych walidacyjnych i treningowych w jedną tablicę
+x_train_val = np.concatenate([x_train, x_val])
+y_train_val = np.concatenate([y_train, y_val])
+
+# instrukcja podziału danych dla funkcji GridSearchCV
+test_fold = np.concatenate([
+    np.full(len(x_train), -1),
+    np.zeros(len(x_val))
+])
+
+predefined_split = PredefinedSplit(test_fold)
+
+# walidacja krzyżowa
+grid_search = GridSearchCV(
+    classifier,
+    parameters,
+    cv=predefined_split,
+    n_jobs=-1
+)
 
 # pomiar czasu treningu
 start_train = time.perf_counter()
-grid_search.fit(x_train, y_train)
+grid_search.fit(x_train_val, y_train_val)
 end_train = time.perf_counter()
 training_time = end_train - start_train
 

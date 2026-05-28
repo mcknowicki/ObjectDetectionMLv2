@@ -59,20 +59,35 @@ all_labels = np.array(all_labels)
 
 print(f"Łączna liczba próbek: {len(all_files)}")
 
-# globalny podział danych (stratify) na zbiór treningowy i testowy
-train_files, test_files, train_labels, test_labels = train_test_split(
+# podział danych na zbiór treningowy, testowy i walidacyjny
+train_files, temp_files, train_labels, temp_labels = train_test_split(
     all_files,
     all_labels,
-    test_size=0.2,
+    test_size=0.30,
     stratify=all_labels,
     random_state=SEED
 )
 
-print(f"Liczba próbek treningowych: {len(train_files)}, testowych: {len(test_files)}")
+val_files, test_files, val_labels, test_labels = train_test_split(
+    temp_files,
+    temp_labels,
+    test_size=0.50,
+    stratify=temp_labels,
+    random_state=SEED
+)
+
+print(
+    f"Liczba próbek:"
+    f"\nTrain: {len(train_files)}"
+    f"\nValidation: {len(val_files)}"
+    f"\nTest: {len(test_files)}"
+)
 
 # listy wyjściowe
 train_data = []
 train_labels_processed = []
+val_data = []
+val_labels_processed = []
 
 test_data_clean = []
 test_labels_clean = []
@@ -152,33 +167,69 @@ for img_path, label in zip(train_files, train_labels):
         print(f"Błąd (train): {img_path} -> {e}")
 
 
-# zbiór testowy
+# zbiór treningowy z augmentacją
+print("Przetwarzanie zbioru walidacyjnego...")
+
+for img_path, label in zip(val_files, val_labels):
+    try:
+        img = imread(img_path, as_gray=True)
+        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
+
+        for angle in angles:
+            rotated_img = rotate(
+                img,
+                angle,
+                resize=False,
+                mode='constant',
+                cval=BG_VALUE
+            )
+
+            features = extract_features(rotated_img)
+
+            val_data.append(features)
+            val_labels_processed.append(label)
+
+    except Exception as e:
+        print(f"Błąd (val): {img_path} -> {e}")
+
+
+# zbiór testowy z augmentacją
 print("Przetwarzanie zbioru testowego...")
 
 for img_path, label in zip(test_files, test_labels):
 
     try:
         img = imread(img_path, as_gray=True)
+        angles = np.random.uniform(-30, 30, NUM_ROTATIONS)
 
-        # zbiór bez zakłóceń
-        clean_features = extract_features(img)
+        for angle in angles:
+            rotated_img = rotate(
+                img,
+                angle,
+                resize=False,
+                mode='constant',
+                cval=BG_VALUE
+            )
 
-        test_data_clean.append(clean_features)
-        test_labels_clean.append(label)
+            # zbiór testowy clean
+            clean_features = extract_features(rotated_img)
 
-        # zbiór z zakłóceniami
-        corrupted_img = corrupt_image(img)
-        corrupted_features = extract_features(corrupted_img)
+            test_data_clean.append(clean_features)
+            test_labels_clean.append(label)
 
-        test_data_corrupted.append(corrupted_features)
-        test_labels_corrupted.append(label)
+            # zbiór testowy corrupted
+            corrupted_img = corrupt_image(rotated_img)
+            corrupted_features = extract_features(corrupted_img)
 
-        # zapis obrazów do wizualizacji błędnych predykcji
-        test_images_clean.append(resize(img, IMG_SIZE))
-        test_images_corrupted.append(resize(corrupted_img, IMG_SIZE))
+            test_data_corrupted.append(corrupted_features)
+            test_labels_corrupted.append(label)
 
-        # ścieżki do obrazów
-        test_paths.append(img_path)
+            # obrazy do wizualizacji błędnych predykcji
+            test_images_clean.append(resize(rotated_img, IMG_SIZE))
+            test_images_corrupted.append(resize(corrupted_img, IMG_SIZE))
+
+            # ścieżka do obrazu
+            test_paths.append(img_path)
 
     except Exception as e:
         print(f"Błąd (test): {img_path} -> {e}")
@@ -186,26 +237,29 @@ for img_path, label in zip(test_files, test_labels):
 # konwersja
 train_data = np.array(train_data)
 train_labels_processed = np.array(train_labels_processed)
+val_data = np.array(val_data)
+val_labels_processed = np.array(val_labels_processed)
 
 test_data_clean = np.array(test_data_clean)
 test_labels_clean = np.array(test_labels_clean)
-
 test_data_corrupted = np.array(test_data_corrupted)
 test_labels_corrupted = np.array(test_labels_corrupted)
 
 test_images_clean = np.array(test_images_clean)
 test_images_corrupted = np.array(test_images_corrupted)
 
-#mieszanie w zbiorze train
+# mieszanie w zbiorze train
 indices = np.arange(len(train_data))
 np.random.shuffle(indices)
-
 train_data = train_data[indices]
 train_labels_processed = train_labels_processed[indices]
 
-# ograniczenie ilości próbek według parametru MAX_SAMPLES
-"""train_data = train_data[:MAX_SAMPLES]
-train_labels = train_labels[:MAX_SAMPLES]"""
+# mieszanie w zbiorze validation
+val_indices = np.arange(len(val_data))
+np.random.shuffle(val_indices)
+val_data = val_data[val_indices]
+val_labels_processed = val_labels_processed[val_indices]
+
 
 # zapis danych do pliku HDF5
 output_file = f'./data/dataset_{DATASET}{SUFFIX}.h5'
@@ -218,6 +272,8 @@ with h5py.File(output_file, 'w') as f:
 
     f.create_dataset('train_data', data=train_data)
     f.create_dataset('train_labels', data=train_labels_processed)
+    f.create_dataset('val_data', data=val_data)
+    f.create_dataset('val_labels', data=val_labels_processed)
     f.create_dataset('test_data_clean', data=test_data_clean)
     f.create_dataset('test_labels_clean', data=test_labels_clean)
     f.create_dataset('test_data_corrupted', data=test_data_corrupted)
@@ -228,6 +284,7 @@ with h5py.File(output_file, 'w') as f:
     f.create_dataset('test_paths', data=np.array(test_paths, dtype='S'))
 
 print(f"Train shape: {train_data.shape}")
+print(f"Validation shape: {val_data.shape}")
 print(f"Test clean shape: {test_data_clean.shape}")
 print(f"Test corrupted shape: {test_data_corrupted.shape}")
 print(f"Dane zapisane do {output_file}")

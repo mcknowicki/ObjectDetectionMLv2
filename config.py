@@ -1,6 +1,6 @@
 # konfiguracja generowanych obrazów i cech hog
 IMG_SIZE = (128, 128)
-PIXELS_PER_CELL = (4, 4) # najlepiej 4 4. 8 8 daje mniej cech, co przyspiesza operacje, 16, 16 jest bardziej dokładne, ale obciąża sprzęt
+PIXELS_PER_CELL = (8, 8) # najlepiej 4 4. 8 8 daje mniej cech, co przyspiesza operacje, 16, 16 jest bardziej dokładne, ale obciąża sprzęt
 CELLS_PER_BLOCK = (2, 2) # najlepiej 2 2
 NUM_ROTATIONS = 5 # liczba rotacji na obraz
 
@@ -21,4 +21,4 @@ BLUR_PROBABILITY = 0.6
 OCCLUSION_PROBABILITY = 0.6
 
 # trigger wyświetlający błędnie zaklasyfikowane obrazy w summary
-SHOW_FALSE_PREDICTIONS = False
+SHOW_FALSE_PREDICTIONS = True
