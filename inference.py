@@ -8,8 +8,8 @@ from skimage.feature import hog
 import matplotlib.pyplot as plt
 
 #config
-model_path = './data/models/roadsigns1/model_knn.p'
-img_path = './data/additional_images/Disruption_4.png'
+model_path = './data/models/roadsigns4/model_svm.p'
+img_path = './data/additional_images/stop_test.png'
 
 # wczytanie modelu i kategorii z pliku
 if not os.path.exists(model_path):

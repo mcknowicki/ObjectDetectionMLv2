@@ -323,11 +323,42 @@ for model_name in model_paths.keys():
     plt.tight_layout()
     plt.show()
 
+# wykres ROC do podsumowania
+plt.figure(figsize=(8, 6))
+
+for model_name, test_name, fpr, tpr, roc_auc, best_idx in roc_data:
+
+    if test_name != "Clean":
+        continue
+
+    plt.plot(
+        fpr,
+        tpr,
+        linewidth=2,
+        label=f"{model_name} (AUC={roc_auc:.3f})"
+    )
+
+plt.plot(
+    [0, 1],
+    [0, 1],
+    linestyle="--",
+    color="gray"
+)
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+
+plt.title("ROC Curve Comparison - Clean Dataset")
+
+plt.legend(loc="lower right")
+plt.grid(True)
+
+plt.tight_layout()
+
+plt.show()
 
 # przygotowanie tabeli wyników
 df = pd.DataFrame(results)
-
-robustness_results = []
 
 for model_name in df["Model"].unique():
 
@@ -350,60 +381,12 @@ for model_name in df["Model"].unique():
     f1_clean = clean_row["F1"]
     f1_corrupted = corrupted_row["F1"]
 
-    # przygotowanie tabeli odporności na zakłócenia
-    robustness_results.append({
-
-        "Model": model_name,
-
-        "Accuracy Clean": accuracy_clean,
-        "Accuracy Corrupted": accuracy_corrupted,
-        "Accuracy Drop": accuracy_clean - accuracy_corrupted,
-
-        "AUC Clean": auc_clean,
-        "AUC Corrupted": auc_corrupted,
-        "AUC Drop": auc_clean - auc_corrupted,
-
-        "F1 Clean": f1_clean,
-        "F1 Corrupted": f1_corrupted,
-        "F1 Drop": f1_clean - f1_corrupted,
-
-        "Robustness Score": (
-            accuracy_corrupted / accuracy_clean
-        )
-    })
-
-# wydruk tabel oraz ich eksport
+# wydruk tabeli oraz eksport
 print("\nTABELA WYNIKÓW:")
 print(df)
-
-df_robustness = pd.DataFrame(robustness_results)
-
-print("\nODPORNOŚĆ MODELI NA ZAKŁÓCENIA:")
-print(df_robustness.round(4))
-
-# wykres odporności poszczególnych modeli
-plt.figure(figsize=(8, 5))
-
-plt.bar(
-    df_robustness["Model"],
-    df_robustness["Robustness Score"]
-)
-
-plt.ylabel("Robustness Score")
-plt.ylim(0, 1.05)
-plt.title("Odporność modeli na zakłócenia")
-plt.grid(axis='y')
-
-plt.show()
-
 
 # zaokrąglenie wartości i zapis do csv
 df_rounded = df.round(4)
 output_csv = f'./data/results_{DATASET}{SUFFIX}.csv'
 df_rounded.to_csv(output_csv, index=False)
 print(f"\nWyniki zapisane do: {output_csv}")
-
-df_robustness_rounded = df_robustness.round(4)
-output_csv_robustness = f'./data/results_{DATASET}{SUFFIX}_robustness.csv'
-df_robustness_rounded.to_csv(output_csv_robustness, index=False)
-print(f"\nTabela odporności zapisana do: {output_csv_robustness}")

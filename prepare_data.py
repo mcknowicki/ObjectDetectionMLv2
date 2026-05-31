@@ -169,7 +169,7 @@ for img_path, label in zip(train_files, train_labels):
         print(f"Błąd (train): {img_path} -> {e}")
 
 
-# zbiór treningowy z augmentacją
+# zbiór walidacyjny z augmentacją
 print("Przetwarzanie zbioru walidacyjnego...")
 
 for img_path, label in zip(val_files, val_labels):
